@@ -21,8 +21,10 @@ static Map game_map = {
 
 static int ballsCount = 0;
 
-#define BALLS_TYPE_COUNT 8
-const unsigned int colors[BALLS_TYPE_COUNT] = {GREEN, RED, BLUE, YELLOW, WHITE, PINK, ORANGE, BROWN};
+#define BALLS_IN_LINE 5
+#define BALLS_TYPE_COUNT 3
+const unsigned int colors[BALLS_TYPE_COUNT] = {GREEN, RED, BLUE};
+// const unsigned int colors[BALLS_TYPE_COUNT] = {GREEN, RED, BLUE, YELLOW, PINK, ORANGE};
 
 void new_game() {
     for (int row = 0; row < MAP_ROW_COUNT; row++) {
@@ -74,15 +76,6 @@ int level() {
     return (ballsCount / 100) + 1;
 }
 
-void add_balls() {
-    for (int i = 0; i < level(); i++) {
-        if (!add_ball()) {
-            // If we cannot add more balls, break the loop
-            break;
-        }
-    }
-}
-
 void deselect_ball() {
     if (game_map.selectedRow != -1 && game_map.selectedCol != -1) {
         int posRow = game_map.selectedRow;
@@ -90,6 +83,102 @@ void deselect_ball() {
         game_map.selectedRow = -1;
         game_map.selectedCol = -1;
         draw_cell(posRow, posCol, &game_map);
+    }
+}
+
+void remove_lines() {
+    unsigned int cells[MAP_ROW_COUNT][MAP_COL_COUNT] = {0};
+
+    // Search >=5 the same color balls in a row
+    for (int row = 0; row < MAP_ROW_COUNT; row++) {
+        for (int col = 0; col <= MAP_COL_COUNT - BALLS_IN_LINE; col++) {
+            if (game_map.cells[row][col] != 0 &&
+                game_map.cells[row][col] == game_map.cells[row][col + 1] &&
+                game_map.cells[row][col] == game_map.cells[row][col + 2] &&
+                game_map.cells[row][col] == game_map.cells[row][col + 3] &&
+                game_map.cells[row][col] == game_map.cells[row][col + 4]) {
+                // Found 5 or more in a row
+                cells[row][col] = 1;
+                cells[row][col + 1] = 1;
+                cells[row][col + 2] = 1;
+                cells[row][col + 3] = 1;
+                cells[row][col + 4] = 1;
+            }
+        }
+    }
+
+    // Search >=5 the same color balls in a col
+    for (int col = 0; col < MAP_COL_COUNT; col++) {
+        for (int row = 0; row <= MAP_ROW_COUNT - BALLS_IN_LINE; row++) {
+            if (game_map.cells[row][col] != 0 &&
+                game_map.cells[row][col] == game_map.cells[row + 1][col] &&
+                game_map.cells[row][col] == game_map.cells[row + 2][col] &&
+                game_map.cells[row][col] == game_map.cells[row + 3][col] &&
+                game_map.cells[row][col] == game_map.cells[row + 4][col]) {
+                // Found 5 or more in a row
+                cells[row][col] = 1;
+                cells[row + 1][col] = 1;
+                cells[row + 2][col] = 1;
+                cells[row + 3][col] = 1;
+                cells[row + 4][col] = 1;
+            }
+        }
+    }
+
+    // Search >=5 the same color balls in a diagonal (top-left to bottom-right)
+    for (int row = 0; row <= MAP_ROW_COUNT - BALLS_IN_LINE; row++) {
+        for (int col = 0; col <= MAP_COL_COUNT - BALLS_IN_LINE; col++) {
+            if (game_map.cells[row][col] != 0 &&
+                game_map.cells[row][col] == game_map.cells[row + 1][col + 1] &&
+                game_map.cells[row][col] == game_map.cells[row + 2][col + 2] &&
+                game_map.cells[row][col] == game_map.cells[row + 3][col + 3] &&
+                game_map.cells[row][col] == game_map.cells[row + 4][col + 4]) {
+                // Found 5 or more in a row
+                cells[row][col] = 1;
+                cells[row + 1][col + 1] = 1;
+                cells[row + 2][col + 2] = 1;
+                cells[row + 3][col + 3] = 1;
+                cells[row + 4][col + 4] = 1;
+            }
+        }
+    }
+
+    // Search >=5 the same color balls in a diagonal (top-right to bottom-left)
+    for (int row = 0; row <= MAP_ROW_COUNT - BALLS_IN_LINE; row++) {
+        for (int col = BALLS_IN_LINE - 1; col < MAP_COL_COUNT; col++) {
+            if (game_map.cells[row][col] != 0 &&
+                game_map.cells[row][col] == game_map.cells[row + 1][col - 1] &&
+                game_map.cells[row][col] == game_map.cells[row + 2][col - 2] &&
+                game_map.cells[row][col] == game_map.cells[row + 3][col - 3] &&
+                game_map.cells[row][col] == game_map.cells[row + 4][col - 4]) {
+                // Found 5 or more in a row
+                cells[row][col] = 1;
+                cells[row + 1][col - 1] = 1;
+                cells[row + 2][col - 2] = 1;
+                cells[row + 3][col - 3] = 1;
+                cells[row + 4][col - 4] = 1;
+            }
+        }
+    }
+
+    // Remove the balls
+    for (int row = 0; row < MAP_ROW_COUNT; row++) {
+        for (int col = 0; col < MAP_COL_COUNT; col++) {
+            if (cells[row][col] == 1) {
+                game_map.cells[row][col] = 0;
+                draw_cell(row, col, &game_map);  // Clear the cell on the display
+                ballsCount++;
+            }
+        }
+    }
+}
+
+void add_balls() {
+    for (int i = 0; i < 3; i++) {
+        if (!add_ball()) {
+            // If we cannot add more balls, break the loop
+            break;
+        }
     }
 }
 
@@ -158,7 +247,8 @@ int main() {
                             cells[row][col] = game_map.cells[row][col];
                         }
                     }
-                    add_balls();  // Add new balls after placing one
+                    remove_lines();  // Remove lines after placing a ball
+                    add_balls();     // Add new balls after placing one
                     // Draw changed cells
                     for (int row = 0; row < MAP_ROW_COUNT; row++) {
                         for (int col = 0; col < MAP_COL_COUNT; col++) {
@@ -167,6 +257,7 @@ int main() {
                             }
                         }
                     }
+                    remove_lines();  // Remove lines after adding balls
                 }
             } else {
                 // If the cell is not empty, select the ball
