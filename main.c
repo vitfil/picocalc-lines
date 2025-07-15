@@ -9,8 +9,6 @@
 
 bool add_ball();
 
-const uint LEDPIN = 25;
-
 static Map game_map = {
     .cells = {0},
     .selectedRow = -1,
@@ -201,10 +199,6 @@ int main() {
 
     i2c_kbd_init();
     lcd_init();
-
-    gpio_init(LEDPIN);
-    gpio_set_dir(LEDPIN, GPIO_OUT);
-    gpio_put(LEDPIN, 1);  // Turn on the LED
 
     lcd_clear();
 

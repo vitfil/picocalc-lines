@@ -54,7 +54,6 @@ target_link_libraries(picocalc-lines
         pico_stdlib
         hardware_i2c
         hardware_spi
-        hardware_gpio
         i2ckbd
         lcdspi
         pico_rand
