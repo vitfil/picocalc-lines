@@ -2,6 +2,7 @@
 #define MAP_H
 
 #include <stdbool.h>
+
 #include "lcdspi/display.h"
 
 #define MAP_ROW_COUNT 8
@@ -16,6 +17,13 @@ typedef struct {
     int posCol;
 } Map;
 
+enum Animation {
+    NONE,
+    RAISE,
+    FADE
+};
+
+void draw_ball(int row, int col, Map *map, enum Animation animation);
 void draw_cell(int row, int col, Map *map);
 void draw_map(Map *map);
 

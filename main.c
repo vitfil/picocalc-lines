@@ -38,10 +38,6 @@ void new_game() {
     game_map.selectedCol = -1;
 
     ballsCount = 0;
-
-    for (int i = 0; i < 3; i++) {
-        add_ball();
-    }
 }
 
 bool add_ball() {
@@ -69,6 +65,7 @@ bool add_ball() {
     }
 
     game_map.cells[row][col] = colors[get_rand_32() % BALLS_TYPE_COUNT];
+    draw_ball(row, col, &game_map, RAISE);
     return true;
 }
 
@@ -82,7 +79,7 @@ void deselect_ball() {
         int posCol = game_map.selectedCol;
         game_map.selectedRow = -1;
         game_map.selectedCol = -1;
-        draw_cell(posRow, posCol, &game_map);
+        draw_ball(posRow, posCol, &game_map, NONE);
     }
 }
 
@@ -165,8 +162,8 @@ void remove_lines() {
     for (int row = 0; row < MAP_ROW_COUNT; row++) {
         for (int col = 0; col < MAP_COL_COUNT; col++) {
             if (cells[row][col] == 1) {
+                draw_ball(row, col, &game_map, FADE);  // Clear the cell on the display
                 game_map.cells[row][col] = 0;
-                draw_cell(row, col, &game_map);  // Clear the cell on the display
                 ballsCount++;
             }
         }
@@ -195,13 +192,14 @@ int main() {
     lcd_clear();
 
     new_game();
+    draw_map(&game_map);
     draw_text(64, 154, "Press Space for new game", WHITE, BLACK);
     while (true) {
         if (i2c_kbd_read() == 32) break;
         sleep_ms(20);
     }
-
     draw_map(&game_map);
+    add_balls();
 
     while (true) {
         int c = i2c_kbd_read();
@@ -209,7 +207,7 @@ int main() {
         if (c == 32) {  // Space key
             new_game();
             draw_map(&game_map);
-        } else if (c == 65) {               // 'A' key
+            add_balls();
         } else if (c >= 180 && c <= 183) {  // Arrow keys
             int posRow = game_map.posRow;
             int posCol = game_map.posCol;
@@ -229,7 +227,10 @@ int main() {
             }
             if (posCol != game_map.posCol || posRow != game_map.posRow) {
                 draw_cell(posRow, posCol, &game_map);                    // Clear previous position
+                draw_ball(posRow, posCol, &game_map, NONE);
+                
                 draw_cell(game_map.posRow, game_map.posCol, &game_map);  // Draw new position
+                draw_ball(game_map.posRow, game_map.posCol, &game_map, NONE);
             }
         } else if (c == 10) {  // Enter key
             if (game_map.cells[game_map.posRow][game_map.posCol] == 0) {
@@ -239,7 +240,7 @@ int main() {
                     game_map.cells[game_map.selectedRow][game_map.selectedCol] = 0;
                     // Deselect the ball
                     deselect_ball();
-                    draw_cell(game_map.posRow, game_map.posCol, &game_map);
+                    draw_ball(game_map.posRow, game_map.posCol, &game_map, NONE);
                     unsigned int cells[MAP_ROW_COUNT][MAP_COL_COUNT];
                     // Copy the current game map cells to a temporary array
                     for (int row = 0; row < MAP_ROW_COUNT; row++) {
@@ -250,13 +251,13 @@ int main() {
                     remove_lines();  // Remove lines after placing a ball
                     add_balls();     // Add new balls after placing one
                     // Draw changed cells
-                    for (int row = 0; row < MAP_ROW_COUNT; row++) {
-                        for (int col = 0; col < MAP_COL_COUNT; col++) {
-                            if (cells[row][col] != game_map.cells[row][col]) {
-                                draw_cell(row, col, &game_map);
-                            }
-                        }
-                    }
+                    // for (int row = 0; row < MAP_ROW_COUNT; row++) {
+                    //     for (int col = 0; col < MAP_COL_COUNT; col++) {
+                    //         if (cells[row][col] != game_map.cells[row][col]) {
+                    //             draw_cell(row, col, &game_map);
+                    //         }
+                    //     }
+                    // }
                     remove_lines();  // Remove lines after adding balls
                 }
             } else {
@@ -265,20 +266,16 @@ int main() {
                     // Deselect the ball
                     game_map.selectedRow = -1;
                     game_map.selectedCol = -1;
-                    draw_cell(game_map.posRow, game_map.posCol, &game_map);
+                    draw_ball(game_map.posRow, game_map.posCol, &game_map, NONE);
                 } else {
                     // Deselect the previous ball if any
                     deselect_ball();
                     // Select the new ball
                     game_map.selectedRow = game_map.posRow;
                     game_map.selectedCol = game_map.posCol;
-                    draw_cell(game_map.posRow, game_map.posCol, &game_map);
+                    draw_ball(game_map.posRow, game_map.posCol, &game_map, NONE);
                 }
             }
-        } else if (c >= 0 && c < 256) {
-            // Handle other keys if needed
-        } else {
-            // Unknown key, do nothing
         }
         // for debugging draw the pressed key
         // if (c != -1) {
