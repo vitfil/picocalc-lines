@@ -179,6 +179,23 @@ void add_balls() {
     }
 }
 
+void start_game() {
+    new_game();
+    draw_map(&game_map);
+    draw_rect_fill(MAP_CELL_SIZE, MAP_CELL_SIZE * 3, MAP_CELL_SIZE * 7 - 1, MAP_CELL_SIZE * 5 - 1, BLACK);
+    draw_text(64, 154, "Press Space for new game", WHITE, BLACK);
+    while (true) {
+        if (i2c_kbd_read() == 32) break;
+        sleep_ms(20);
+    }
+    for (int row = 3; row <= 4; row++) {
+        for (int col = 1; col <= 6; col++) {
+            draw_cell(row, col, &game_map);
+        }
+    }
+    add_balls();
+}
+
 int main() {
     stdio_init_all();
 
@@ -191,15 +208,7 @@ int main() {
 
     lcd_clear();
 
-    new_game();
-    draw_map(&game_map);
-    draw_text(64, 154, "Press Space for new game", WHITE, BLACK);
-    while (true) {
-        if (i2c_kbd_read() == 32) break;
-        sleep_ms(20);
-    }
-    draw_map(&game_map);
-    add_balls();
+    start_game();
 
     while (true) {
         int c = i2c_kbd_read();
